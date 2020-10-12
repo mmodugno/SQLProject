@@ -1,7 +1,36 @@
-/*****CREAR DATABASE Y DESPUÉS CREAR SCHEMA*********/
 USE THE_X_TEAM
 GO
 
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Compra_autoparte'
+		)
+		drop table Compra_autoparte
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Compra'
+		)
+		drop table Compra
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Modelo'
+		)
+		drop table Modelo
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Auto'
+		)
+		drop table Auto
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Tipo_Auto'
+		)
+		drop table Tipo_Auto
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
@@ -58,9 +87,11 @@ CREATE TABLE Fabricante(
 );
 
 INSERT INTO Fabricante
-select DISTINCT FABRICANTE_NOMBRE from GD2C2020.gd_esquema.Maestra
+select DISTINCT FABRICANTE_NOMBRE from GD2C2020.gd_esquema.Maestra;
 
 -------------------------------------------------------
+
+
 
 /* TIPO_CAJA */
 CREATE TABLE Tipo_Caja (
@@ -91,7 +122,6 @@ CREATE TABLE Tipo_Motor (
 "TIPO_MOTOR_CODIGO" decimal(18, 0) PRIMARY KEY,
 "TIPO_MOTOR_DESC" nvarchar(255)
 );
-
 INSERT INTO Tipo_Motor
 select DISTINCT TIPO_MOTOR_CODIGO from GD2C2020.gd_esquema.Maestra
 where TIPO_MOTOR_CODIGO is not null;*/
@@ -100,12 +130,16 @@ where TIPO_MOTOR_CODIGO is not null;*/
 CREATE TABLE Config_Auto (
 "ID_CONFIG" int identity(1,1) PRIMARY KEY,
 "ID_CAJA" decimal FOREIGN KEY REFERENCES Tipo_Caja(TIPO_CAJA_CODIGO),
-"ID_TRANSMISION" decimal FOREIGN KEY REFERENCES Tipo_Transmision(TIPO_TRANSMISION_CODIGO)
+"ID_TRANSMISION" decimal FOREIGN KEY REFERENCES Tipo_Transmision(TIPO_TRANSMISION_CODIGO),
+"tipo_motor_codigo" decimal (18,0)
 );
 
 insert into Config_Auto
-select DISTINCT TIPO_CAJA_CODIGO, TIPO_TRANSMISION_CODIGO from GD2C2020.gd_esquema.Maestra
-WHERE TIPO_TRANSMISION_CODIGO IS NOT NULL;
+select DISTINCT TIPO_CAJA_CODIGO, TIPO_TRANSMISION_CODIGO,TIPO_MOTOR_CODIGO from GD2C2020.gd_esquema.Maestra
+WHERE TIPO_TRANSMISION_CODIGO IS NOT NULL
+and TIPO_MOTOR_CODIGO is not null
+
+----------------------------------------------------------------------------------------------
 
 /* SUCURSAL */
 CREATE TABLE Sucursal (
@@ -161,9 +195,7 @@ select DISTINCT AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION,
 (Select ID_FABRICANTE FROM Fabricante WHERE GD2C2020.gd_esquema.Maestra.FABRICANTE_NOMBRE=Fabricante.FABRICANTE_NOMBRE) AS id_fabr,
 COMPRA_PRECIO,PRECIO_FACTURADO from GD2C2020.gd_esquema.Maestra
 WHERE AUTO_PARTE_CODIGO IS NOT NULL
-GROUP BY AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION,
-id_fabr,
-COMPRA_PRECIO,PRECIO_FACTURADO;
+GROUP BY AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION,id_fabr,COMPRA_PRECIO,PRECIO_FACTURADO;
 
 /* FACTURA_AUTOPARTE */
 CREATE TABLE Factura_Autoparte (
@@ -175,4 +207,83 @@ CREATE TABLE Factura_Autoparte (
 "CLIENTE_FECHA_NAC" datetime2(3),
 "CLIENTE_MAIL" nvarchar(255)
 );
+
+/* TIPO_AUTO */
+
+create table Tipo_Auto (
+"tipo_auto_codigo" decimal(18,0) primary key,
+"tipo_auto_desc" nvarchar(255)
+);
+
+INSERT INTO Tipo_Auto
+select tipo_auto_codigo,tipo_auto_desc from GD2C2020.gd_esquema.Maestra
+where TIPO_AUTO_CODIGO is not null
+group by tipo_auto_codigo,tipo_auto_desc;
+---------------------------------------------------------
+/* MODELO */
+
+create table Modelo(
+"modelo_codigo" decimal(18, 0) primary key,
+"modelo_nombre" nvarchar(255),
+"modelo_potencia" decimal(18, 0)
+);
+
+select * from Modelo
+
+insert into Modelo
+select modelo_codigo,modelo_nombre,modelo_potencia from GD2C2020.gd_esquema.Maestra
+group by modelo_codigo,modelo_nombre,modelo_potencia;
+
+/* AUTO */
+create table Auto (
+"id_auto" int identity(1,1) primary key,
+"auto_patente" nvarchar(50),
+"auto_nro_chasis" nvarchar(50),
+"auto_nro_motor" nvarchar(50),
+"auto_fecha_alta" datetime2(3),
+"auto_cant_kms" decimal(18),
+"id_fabricante" int foreign key references Fabricante(id_fabricante),
+"id_modelo" decimal(18,0) foreign key references Modelo(modelo_codigo),
+"tipo_auto" decimal(18,0) foreign key references Tipo_auto(tipo_auto_codigo),
+"precio_facturado" decimal(18,2),
+"compra_precio" decimal(18,2),
+"id_config" int foreign key references Config_Auto("id_config")
+);
+
+insert into Auto
+select auto_patente,
+auto_nro_chasis,
+auto_nro_motor,
+auto_fecha_alta,
+auto_cant_kms,
+(select id_fabricante from Fabricante where maestra.FABRICANTE_NOMBRE = Fabricante.FABRICANTE_NOMBRE) as idFab,
+(select MODELO_CODIGO from Modelo where maestra.MODELO_CODIGO = Modelo.MODELO_CODIGO) as idModelo,
+(select TIPO_AUTO_CODIGO from tipo_auto where maestra.TIPO_AUTO_CODIGO = tipo_auto.tipo_auto_codigo) as tipoAuto,
+PRECIO_FACTURADO,
+compra_precio,
+ca.id_config from GD2C2020.gd_esquema.Maestra maestra
+inner join config_auto ca
+on ca.ID_CAJA = maestra.TIPO_CAJA_CODIGO
+and ca.id_transmision = maestra.TIPO_TRANSMISION_CODIGO
+and ca.tipo_motor_codigo = maestra.TIPO_MOTOR_CODIGO
+
+/* COMPRA */
+CREATE TABLE Compra (
+"COMPRA_NRO" decimal(18,0) PRIMARY KEY,
+"COMPRA_FECHA" datetime2(3) ,
+--"ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
+"ID_SUCURSAL" int FOREIGN KEY REFERENCES Sucursal(ID_SUCURSAL), 
+"id_auto" int FOREIGN KEY REFERENCES AUTO(id_auto) 
+);
+
+/* COMPRA --TERMINAR-- AUTOPARTE */
+CREATE TABLE Compra_Autoparte (
+"COMPRA_NRO" decimal(18,0) PRIMARY KEY,
+"COMPRA_FECHA" datetime2(3) ,
+--"ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
+"ID_SUCURSAL" int FOREIGN KEY REFERENCES Sucursal(ID_SUCURSAL), 
+--falta crear el AUTO
+"id_auto" int FOREIGN KEY REFERENCES AUTO(id_auto) 
+);
+
 
