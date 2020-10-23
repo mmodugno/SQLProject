@@ -86,15 +86,18 @@ IF EXISTS (
 		WHERE object_name(object_id) = 'Sucursal'
 		)
 		drop table Sucursal
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Factura_Autoparte'
+		)
+		drop table Factura_Autoparte
 
 /* FABRICANTES */
 CREATE TABLE Fabricante(
 "ID_FABRICANTE" int identity(1,1) PRIMARY KEY,
 "FABRICANTE_NOMBRE" nvarchar(255)
 );
-
-INSERT INTO Fabricante
-select DISTINCT FABRICANTE_NOMBRE from GD2C2020.gd_esquema.Maestra;
 
 -------------------------------------------------------
 
@@ -238,11 +241,10 @@ CREATE TABLE Factura (
 
 insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL)
 select DISTINCT FACTURA_NRO, FACTURA_FECHA, 
-(Select ID_CLIENTE FROM Cliente WHERE CLIENTE_DNI= maestra.FAC_CLIENTE_DNI), 
+(Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.FAC_CLIENTE_DNI and CLIENTE_NOMBRE = maestra.FAC_CLIENTE_NOMBRE)), 
 (Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.FAC_SUCURSAL_DIRECCION) 
 from GD2C2020.gd_esquema.Maestra maestra
 WHERE FACTURA_NRO IS NOT NULL;
-
 
 ------------------------------------------------------------------
 /* MODELO */
@@ -281,17 +283,50 @@ inner join (
 on t.AUTO_PARTE_CODIGO = maestra.AUTO_PARTE_CODIGO
 WHERE maestra.AUTO_PARTE_CODIGO IS NOT NULL
 AND maestra.COMPRA_PRECIO IS NULL
-------------------------------------------------------------------
-/* FACTURA_AUTOPARTE */
-CREATE TABLE Factura_Autoparte (
-"ID_CLIENTE" int identity(1,1) PRIMARY KEY,
-"CLIENTE_DNI" decimal(18,0),
-"CLIENTE_APELLIDO" nvarchar(255),
-"CLIENTE_NOMBRE" nvarchar(255) ,
-"CLIENTE_DIRECCION" nvarchar(255),
-"CLIENTE_FECHA_NAC" datetime2(3),
-"CLIENTE_MAIL" nvarchar(255)
-);
+
+---------------> ESTO MENDO <---------------
+/*IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Factura_Autoparte'
+		)
+		drop table Factura_Autoparte
+
+IF OBJECT_ID('PR_ORGANIZAR_CANT_AUTOPARTE') IS NOT NULL
+	DROP PROCEDURE PR_ORGANIZAR_CANT_AUTOPARTE
+GO
+
+CREATE PROCEDURE PR_ORGANIZAR_CANT_AUTOPARTE
+	AS 
+	BEGIN 
+		DECLARE @AUX_FACTURA decimal(18,0)
+		DECLARE @COD_AUTOPARTE decimal(18,0)
+		DECLARE C_FACTURA CURSOR FOR 
+		(SELECT AUTO_PARTE_CODIGO, ID_FACTURA FROM Factura_Autoparte)
+		OPEN C_FACTURA
+		FETCH  C_FACTURA INTO @COD_AUTOPARTE, @AUX_FACTURA
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			DECLARE @CANT_AUTO_PARTE int
+			SET @CANT_AUTO_PARTE = (SELECT COUNT(AUTO_PARTE_CODIGO) FROM GD2C2020.gd_esquema.Maestra mae where @AUX_FACTURA = mae.FACTURA_NRO
+			AND @COD_AUTOPARTE = mae.AUTO_PARTE_CODIGO) 
+			UPDATE Factura_Autoparte
+			SET CANTIDAD_AUTOPARTE = @CANT_AUTO_PARTE
+			WHERE ID_FACTURA = @AUX_FACTURA 
+			FETCH C_FACTURA INTO @COD_AUTOPARTE, @AUX_FACTURA
+		END
+		CLOSE C_FACTURA
+		DEALLOCATE C_FACTURA
+	END
+GO
+
+EXEC PR_ORGANIZAR_CANT_AUTOPARTE
+
+select * from Factura_Autoparte
+order by CANTIDAD_AUTOPARTE DESC*/
+
+/*select COUNT(DISTINCT AUTO_PARTE_CODIGO) from GD2C2020.gd_esquema.Maestra
+WHERE AUTO_PARTE_CODIGO IS NOT NULL*/
 ------------------------------------------------------------------
 /* TIPO_AUTO */
 
@@ -356,3 +391,20 @@ CREATE TABLE Compra_Autoparte (
 --falta crear el AUTO
 "id_auto" int FOREIGN KEY REFERENCES AUTO(id_auto) 
 );
+------------------------------------------------------------------
+/* FACTURA_AUTOPARTE */
+CREATE TABLE Factura_Autoparte (
+"ID_FACT_AUTO_PARTE" int identity(1,1) PRIMARY KEY,
+"AUTO_PARTE_CODIGO" decimal(18,0) FOREIGN KEY REFERENCES Autoparte(AUTO_PARTE_CODIGO),
+"ID_FACTURA" decimal(18,0) FOREIGN KEY REFERENCES Factura(FACTURA_NRO),
+"CANTIDAD_AUTOPARTE" decimal(18,0)
+);
+
+INSERT INTO Factura_Autoparte
+SELECT AUTO_PARTE_CODIGO, FACTURA_NRO, 1
+--(SELECT COUNT(AUTO_PARTE_CODIGO) FROM GD2C2020.gd_esquema.Maestra mae where FACTURA_NRO = mae.FACTURA_NRO )
+FROM GD2C2020.gd_esquema.Maestra 
+WHERE (AUTO_PARTE_CODIGO IS NOT NULL AND FACTURA_NRO IS NOT NULL)
+GROUP BY AUTO_PARTE_CODIGO, FACTURA_NRO
+ORDER BY AUTO_PARTE_CODIGO
+------------------------------------------------------------------
