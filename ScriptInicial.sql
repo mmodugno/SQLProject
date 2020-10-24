@@ -319,14 +319,14 @@ CREATE TABLE Factura (
 "FACTURA_FECHA" datetime2(3),
 "ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
 "ID_SUCURSAL" int FOREIGN KEY REFERENCES Sucursal(ID_SUCURSAL),
---falta crear el AUTO
 "ID_AUTO" int FOREIGN KEY REFERENCES AUTO(id_auto) 
 );
 
-insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL)
+insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL,ID_AUTO)
 select DISTINCT FACTURA_NRO, FACTURA_FECHA, 
 (Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.FAC_CLIENTE_DNI and CLIENTE_NOMBRE = maestra.FAC_CLIENTE_NOMBRE)), 
-(Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.FAC_SUCURSAL_DIRECCION) 
+(Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.FAC_SUCURSAL_DIRECCION),
+(Select distinct id_auto FROM Auto where AUTO_PATENTE = maestra.AUTO_PATENTE)
 from GD2C2020.gd_esquema.Maestra maestra
 WHERE FACTURA_NRO IS NOT NULL;
 
@@ -366,3 +366,62 @@ GROUP BY AUTO_PARTE_CODIGO, FACTURA_NRO
 
 /* Compra_Autoparte */
 ------------------------------------------------------------------
+
+---------------    VISTAS   -------------------
+
+
+--COMPRA DE AUTO
+SELECT SUCURSAL_DIRECCION as 'Sucursal',
+auto_nro_chasis as 'Nro de chasis',
+auto_nro_motor as 'Nro de motor',
+auto_patente as 'Patente',
+CAST(auto_fecha_alta AS DATE) as 'Año de Alta', 
+auto_cant_kms as 'Cantidad de kilometraje',
+modelo_nombre as 'Modelo',
+COMPRA_NRO, CAST(COMPRA_FECHA AS DATE) as 'Fecha de Compra',
+compra_precio as 'Precio del automovil'
+from Compra c
+INNER JOIN Auto a ON c.id_auto = a.id_auto
+INNER JOIN Modelo modelo ON a.id_modelo = modelo_codigo
+INNER JOIN Sucursal sucur ON sucur.ID_SUCURSAL = c.ID_SUCURSAL
+
+
+
+--COMPRA DE AUTOPARTE
+SELECT comp_auto.AUTO_PARTE_CODIGO as 'Codigo de auto parte',
+--CATEGORIA Y RUBRO??????????????????????????????????????????????????????????
+modelo_nombre as 'Modelo de automovil',
+FABRICANTE_NOMBRE as 'Fabricante'
+--SUCURSAL??????????????????????????????????????????????????????????????????
+FROM Compra_Autoparte comp_auto
+INNER JOIN Autoparte autoparte on autoparte.AUTO_PARTE_CODIGO = comp_auto.AUTO_PARTE_CODIGO
+INNER JOIN Modelo modelo ON autoparte.ID_MODELO = modelo_codigo
+INNER JOIN Fabricante fab on autoparte.ID_FABRICANTE = fab.ID_FABRICANTE
+
+
+
+select * from Autoparte
+select * from Compra_Autoparte
+select * from Modelo
+select * from Fabricante
+
+--FACTURACION DE AUTOMOVIL
+SELECT * FROM Factura
+
+
+SELECT 
+auto_nro_chasis as 'Nro de chasis',
+auto_nro_motor as 'Nro de motor',
+auto_patente as 'Patente',
+CAST(auto_fecha_alta AS DATE) as 'Año de Alta', 
+auto_cant_kms as 'Cantidad de kilometraje',
+modelo_nombre as 'Modelo',
+SUCURSAL_DIRECCION as 'Sucursal',
+precio_facturado as 'Precio de Venta',
+FACTURA_NRO as 'Nro de Factura',
+CAST(FACTURA_FECHA as DATE) as 'Fecha de Factura'
+FROM Factura f
+INNER JOIN Auto a ON f.id_auto = a.id_auto
+INNER JOIN Modelo modelo ON a.id_modelo = modelo_codigo
+INNER JOIN Sucursal sucur ON sucur.ID_SUCURSAL = f.ID_SUCURSAL
+
