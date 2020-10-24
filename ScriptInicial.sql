@@ -1,6 +1,17 @@
 USE THE_X_TEAM
 GO
 
+
+If EXISTS (
+	select * from sys.databases
+	where name = 'TP_THE_X_TEAM'
+) drop database TP_THE_X_TEAM
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Factura_Autoparte'
+		)
+		drop table Factura_Autoparte
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
@@ -13,6 +24,13 @@ IF EXISTS (
 		WHERE object_name(object_id) = 'Compra'
 		)
 		drop table Compra
+
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Factura'
+		)
+		drop table Factura
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
@@ -25,43 +43,6 @@ IF EXISTS (
 		WHERE object_name(object_id) = 'Tipo_Auto'
 		)
 		drop table Tipo_Auto
-
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Config_Auto'
-		)
-		drop table Config_Auto
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Tipo_Caja'
-		)
-		drop table Tipo_Caja
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Tipo_Transmision'
-		)
-		drop table Tipo_Transmision
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Factura_Autoparte'
-		)
-		drop table Factura_Autoparte
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Factura'
-		)
-		drop table Factura
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Cliente'
-		)
-		drop table Cliente
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
@@ -71,15 +52,15 @@ IF EXISTS (
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
-		WHERE object_name(object_id) = 'Fabricante'
-		)
-		drop table Fabricante
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
 		WHERE object_name(object_id) = 'Modelo'
 		)
 		drop table Modelo
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Cliente'
+		)
+		drop table Cliente
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
@@ -89,11 +70,32 @@ IF EXISTS (
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
-		WHERE object_name(object_id) = 'Factura_Autoparte'
+		WHERE object_name(object_id) = 'Config_Auto'
 		)
-		drop table Factura_Autoparte
+		drop table Config_Auto
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Tipo_Transmision'
+		)
+		drop table Tipo_Transmision
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Tipo_Caja'
+		)
+		drop table Tipo_Caja
+IF EXISTS (
+		SELECT * 
+		FROM sys.tables 
+		WHERE object_name(object_id) = 'Fabricante'
+		)
+		drop table Fabricante
 
 /* FABRICANTES */
+
+create database TP_THE_X_TEAM
+
 CREATE TABLE Fabricante(
 "ID_FABRICANTE" int identity(1,1) PRIMARY KEY,
 "FABRICANTE_NOMBRE" nvarchar(255)
@@ -110,6 +112,8 @@ CREATE TABLE Tipo_Caja (
 "TIPO_CAJA_DESC" nvarchar(255)
 );
 
+
+
 INSERT INTO Tipo_Caja
 select DISTINCT TIPO_CAJA_CODIGO,TIPO_CAJA_DESC from GD2C2020.gd_esquema.Maestra
 where TIPO_CAJA_CODIGO is not null;
@@ -125,6 +129,7 @@ CREATE TABLE Tipo_Transmision (
 INSERT INTO Tipo_Transmision
 select DISTINCT TIPO_TRANSMISION_CODIGO,TIPO_TRANSMISION_DESC from GD2C2020.gd_esquema.Maestra
 where TIPO_TRANSMISION_CODIGO is not null;
+
 
 -------------------------------------------------------
 
@@ -150,6 +155,8 @@ insert into Config_Auto
 select DISTINCT TIPO_CAJA_CODIGO, TIPO_TRANSMISION_CODIGO,TIPO_MOTOR_CODIGO from GD2C2020.gd_esquema.Maestra
 WHERE TIPO_TRANSMISION_CODIGO IS NOT NULL
 and TIPO_MOTOR_CODIGO is not null;
+
+
 
 -------------------------------------------------------
 
@@ -177,40 +184,6 @@ CREATE TABLE Cliente (
 "CLIENTE_MAIL" nvarchar(255)
 );
 
-select CLIENTE_DNI from Cliente
-group by CLIENTE_DNI
-having count(CLIENTE_DNI) > 1
-/* clientes repetidos?
-72027361
-24793088
-35779577
-27878674
-89095090
-23709507
-16279501
-51888356
-81185477
-85850168
-37638888
-9498035
-25340741
-6119806
-93237277
-42739188
-13814044
-93569323
-81139763
-2697277
-23977150
-20514527
-75067202
-42012010
-49340011
-47875449
-26034978
-9647031
-*/
-
 INSERT INTO Cliente
 select distinct CLIENTE_DNI, CLIENTE_APELLIDO, CLIENTE_NOMBRE, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL 
 from GD2C2020.gd_esquema.Maestra
@@ -231,23 +204,9 @@ AND NOT EXISTS (
 	CLIENTE_MAIL = FAC_CLIENTE_MAIL
 )
 group by FAC_CLIENTE_DNI,FAC_CLIENTE_APELLIDO,FAC_CLIENTE_NOMBRE,FAC_CLIENTE_DIRECCION,FAC_CLIENTE_FECHA_NAC,FAC_CLIENTE_MAIL
-------------------------------------------------------------------
-/* FACTURA */
-CREATE TABLE Factura (
-"FACTURA_NRO" decimal(18,0) PRIMARY KEY,
-"FACTURA_FECHA" datetime2(3),
-"ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
-"ID_SUCURSAL" int FOREIGN KEY REFERENCES Sucursal(ID_SUCURSAL),
---falta crear el AUTO
-"ID_AUTO" int FOREIGN KEY REFERENCES AUTO(id_auto) 
-);
 
-insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL)
-select DISTINCT FACTURA_NRO, FACTURA_FECHA, 
-(Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.FAC_CLIENTE_DNI and CLIENTE_NOMBRE = maestra.FAC_CLIENTE_NOMBRE)), 
-(Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.FAC_SUCURSAL_DIRECCION) 
-from GD2C2020.gd_esquema.Maestra maestra
-WHERE FACTURA_NRO IS NOT NULL;
+------------------------------------------------------------------
+
 
 ------------------------------------------------------------------
 /* MODELO */
@@ -289,6 +248,7 @@ AND maestra.COMPRA_PRECIO IS NULL
 
 ------------------------------------------------------------------
 /* TIPO_AUTO */
+
 
 create table Tipo_Auto (
 "tipo_auto_codigo" decimal(18,0) primary key,
@@ -353,7 +313,26 @@ select DISTINCT COMPRA_NRO, COMPRA_FECHA,
 from GD2C2020.gd_esquema.Maestra maestra
 WHERE COMPRA_NRO IS NOT NULL;
 
-/* COMPRA --TERMINAR-- AUTOPARTE */
+/* FACTURA */
+CREATE TABLE Factura (
+"FACTURA_NRO" decimal(18,0) PRIMARY KEY,
+"FACTURA_FECHA" datetime2(3),
+"ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
+"ID_SUCURSAL" int FOREIGN KEY REFERENCES Sucursal(ID_SUCURSAL),
+--falta crear el AUTO
+"ID_AUTO" int FOREIGN KEY REFERENCES AUTO(id_auto) 
+);
+
+insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL)
+select DISTINCT FACTURA_NRO, FACTURA_FECHA, 
+(Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.FAC_CLIENTE_DNI and CLIENTE_NOMBRE = maestra.FAC_CLIENTE_NOMBRE)), 
+(Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.FAC_SUCURSAL_DIRECCION) 
+from GD2C2020.gd_esquema.Maestra maestra
+WHERE FACTURA_NRO IS NOT NULL;
+
+-----------------------------
+
+/* Compra Autoparte */
 
 CREATE TABLE Compra_Autoparte (
 "ID_COMP_AUTO_PARTE" int identity(1,1) PRIMARY KEY,
