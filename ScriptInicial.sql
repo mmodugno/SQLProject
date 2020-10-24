@@ -92,6 +92,33 @@ IF EXISTS (
 		)
 		drop table Fabricante
 
+
+-- BORRADO DE VISTAS
+
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'CompraAutomoviles'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+BEGIN
+	DROP VIEW CompraAutomoviles
+END
+GO
+
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'FacturacionAutomoviles'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+BEGIN
+	DROP VIEW FacturacionAutomoviles
+END
+GO
+
+/*			COMIENZO DE CREACION			*/
+
 /* FABRICANTES */
 
 create database TP_THE_X_TEAM
@@ -371,6 +398,7 @@ GROUP BY AUTO_PARTE_CODIGO, FACTURA_NRO
 
 
 --COMPRA DE AUTO
+CREATE VIEW CompraAutomoviles AS
 SELECT SUCURSAL_DIRECCION as 'Sucursal',
 auto_nro_chasis as 'Nro de chasis',
 auto_nro_motor as 'Nro de motor',
@@ -384,7 +412,7 @@ from Compra c
 INNER JOIN Auto a ON c.id_auto = a.id_auto
 INNER JOIN Modelo modelo ON a.id_modelo = modelo_codigo
 INNER JOIN Sucursal sucur ON sucur.ID_SUCURSAL = c.ID_SUCURSAL
-
+GO
 
 
 --COMPRA DE AUTOPARTE
@@ -399,16 +427,9 @@ INNER JOIN Modelo modelo ON autoparte.ID_MODELO = modelo_codigo
 INNER JOIN Fabricante fab on autoparte.ID_FABRICANTE = fab.ID_FABRICANTE
 
 
-
-select * from Autoparte
-select * from Compra_Autoparte
-select * from Modelo
-select * from Fabricante
-
 --FACTURACION DE AUTOMOVIL
-SELECT * FROM Factura
 
-
+CREATE VIEW FacturacionAutomoviles AS
 SELECT 
 auto_nro_chasis as 'Nro de chasis',
 auto_nro_motor as 'Nro de motor',
@@ -424,4 +445,20 @@ FROM Factura f
 INNER JOIN Auto a ON f.id_auto = a.id_auto
 INNER JOIN Modelo modelo ON a.id_modelo = modelo_codigo
 INNER JOIN Sucursal sucur ON sucur.ID_SUCURSAL = f.ID_SUCURSAL
+GO
+
+-- FACTURACION DE AUTOPARTES
+
+
+SELECT 
+-- Ciudad origen y sucursal son de un inner join con sucursal
+fac_auto.AUTO_PARTE_CODIGO as 'Autoparte Requerida',
+CANTIDAD_AUTOPARTE as 'Cantidad Requerida',
+--Categoria y rubro
+(autoparte.PRECIO_FACTURADO * CANTIDAD_AUTOPARTE) as 'Precio Total',
+ID_FACTURA as 'Nro de Factura'
+-- Le falta fecha
+FROM Factura_Autoparte fac_auto
+INNER JOIN Autoparte autoparte on autoparte.AUTO_PARTE_CODIGO = fac_auto.AUTO_PARTE_CODIGO
+
 
