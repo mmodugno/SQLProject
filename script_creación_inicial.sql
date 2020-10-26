@@ -1,10 +1,15 @@
 USE THE_X_TEAM
 GO
-
+/*
+Primero, borramos todos los datos(tablas,base,vistas,etc) que ya existan, para evitar inconvenientes a la hora de volver a ejecutar el script completo
+*/
+--Base
 If EXISTS (
 	select * from sys.databases
 	where name = 'TP_THE_X_TEAM'
 ) drop database TP_THE_X_TEAM
+
+--Tablas
 IF EXISTS (
 		SELECT * 
 		FROM sys.tables 
@@ -98,44 +103,36 @@ IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'CompraAutomoviles'
-			AND schema_name(schema_id) = 'THE_X_TEAM'
+			--AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-BEGIN
 	DROP VIEW CompraAutomoviles
-END
 GO
 
 IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'CompraAutopartes'
-			AND schema_name(schema_id) = 'THE_X_TEAM'
+			--AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-BEGIN
 	DROP VIEW CompraAutopartes
-END
 GO
 
 IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'FacturacionAutomoviles'
-			AND schema_name(schema_id) = 'THE_X_TEAM'
+			--AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-BEGIN
 	DROP VIEW FacturacionAutomoviles
-END
 GO
 
 IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'FacturacionAutopartes'
-			AND schema_name(schema_id) = 'THE_X_TEAM'
+			--AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-BEGIN
 	DROP VIEW FacturacionAutopartes
-END
 GO
 
 /**********************************************
@@ -274,7 +271,7 @@ SELECT SUCURSAL_DIRECCION as 'Sucursal',
 auto_nro_chasis as 'Nro de chasis',
 auto_nro_motor as 'Nro de motor',
 auto_patente as 'Patente',
-CAST(auto_fecha_alta AS DATE) as 'Año de Alta', 
+CAST(auto_fecha_alta AS DATE) as 'AÃ±o de Alta', 
 auto_cant_kms as 'Cantidad de kilometraje',
 modelo_nombre as 'Modelo',
 COMPRA_NRO, 
@@ -310,7 +307,7 @@ SELECT
 auto_nro_chasis as 'Nro de chasis',
 auto_nro_motor as 'Nro de motor',
 auto_patente as 'Patente',
-CAST(auto_fecha_alta AS DATE) as 'Año de Alta', 
+CAST(auto_fecha_alta AS DATE) as 'AÃ±o de Alta', 
 auto_cant_kms as 'Cantidad de kilometraje',
 modelo_nombre as 'Modelo',
 SUCURSAL_DIRECCION as 'Sucursal',
@@ -344,32 +341,41 @@ GO
 ---------------   INSERTS   -------------------
 **********************************************/
 
+-- Insertamos todos los nombres de fabricantes de la tabla maestra, estos luego tendran un ID autogenerado
 INSERT INTO Fabricante
 select DISTINCT FABRICANTE_NOMBRE from GD2C2020.gd_esquema.Maestra;
 -------------------------------------------------------
+-- Insertamos todos los codigos y descripciones de cajas de la tabla maestra
 INSERT INTO Tipo_Caja
 select DISTINCT TIPO_CAJA_CODIGO,TIPO_CAJA_DESC from GD2C2020.gd_esquema.Maestra
 where TIPO_CAJA_CODIGO is not null;
 -------------------------------------------------------
+-- Insertamos todos los codigos y descripciones de transmisiones de la tabla maestra
 INSERT INTO Tipo_Transmision
 select DISTINCT TIPO_TRANSMISION_CODIGO,TIPO_TRANSMISION_DESC from GD2C2020.gd_esquema.Maestra
 where TIPO_TRANSMISION_CODIGO is not null;
 -------------------------------------------------------
+/*Insertamos todos los codigos de cajas, transmisiones y motores de la tabla maestra, que para algunos autos esta configuracion sera la misma, 
+esto nos dará cada config un ID autogenerado que luego usaremos en los Autos*/
 insert into Config_Auto
 select DISTINCT TIPO_CAJA_CODIGO, TIPO_TRANSMISION_CODIGO,TIPO_MOTOR_CODIGO from GD2C2020.gd_esquema.Maestra
 WHERE TIPO_TRANSMISION_CODIGO IS NOT NULL
 and TIPO_MOTOR_CODIGO is not null;
 -------------------------------------------------------
+--Insertamos todas las direcciones, mail, telefonos y ciudad de cada sucursal de la tabla maestra
 insert into Sucursal
 select DISTINCT SUCURSAL_DIRECCION, SUCURSAL_MAIL,SUCURSAL_TELEFONO,SUCURSAL_CIUDAD from GD2C2020.gd_esquema.Maestra
 WHERE SUCURSAL_DIRECCION IS NOT NULL;
 -------------------------------------------------------
+--Insertamos los clientes con su DNI, Apellido, nombre, direccion, fecha de nacimiento y mail. Aunque, estos solo seran los clientes que les compramos autos o autopartes
 INSERT INTO Cliente
 select distinct CLIENTE_DNI, CLIENTE_APELLIDO, CLIENTE_NOMBRE, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL 
 from GD2C2020.gd_esquema.Maestra
 where CLIENTE_DNI IS NOT NULL 
 group by CLIENTE_DNI,CLIENTE_APELLIDO,CLIENTE_NOMBRE,CLIENTE_DIRECCION,CLIENTE_FECHA_NAC,CLIENTE_MAIL
 
+/*Insertamos los clientes a los que les vendimos autos o autopartes con su DNI, Apellido, nombre, direccion, fecha de nacimiento y mail. 
+Pero, fijandonos que ya no esten insertados, por si algun cliente nos compro y despues le facturamos*/
 INSERT INTO Cliente
 select distinct FAC_CLIENTE_DNI, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_NOMBRE, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, FAC_CLIENTE_MAIL 
 from GD2C2020.gd_esquema.Maestra
@@ -385,10 +391,14 @@ AND NOT EXISTS (
 )
 group by FAC_CLIENTE_DNI,FAC_CLIENTE_APELLIDO,FAC_CLIENTE_NOMBRE,FAC_CLIENTE_DIRECCION,FAC_CLIENTE_FECHA_NAC,FAC_CLIENTE_MAIL
 -------------------------------------------------------
+--Insertamos todos los codigos, nombre y potencia de cada modelo de la tabla maestra
 insert into Modelo
 select modelo_codigo,modelo_nombre,modelo_potencia from GD2C2020.gd_esquema.Maestra
 group by modelo_codigo,modelo_nombre,modelo_potencia;
 -------------------------------------------------------
+/*Insertamos todos los codigos, descripciones, precio de compra y venta de cada Autoparte de la tabla maestra.
+Ademas, llenamos su codigo de modelo y fabricante, comprarando sus nombres con las tablas creadas anteriormente para darnos este codigo.
+*/
 insert into Autoparte
 select DISTINCT maestra.AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION, fab.id_fabricante, MODELO_CODIGO, t.COMPRA_PRECIO, PRECIO_FACTURADO 
 from GD2C2020.gd_esquema.Maestra maestra
@@ -404,11 +414,15 @@ on t.AUTO_PARTE_CODIGO = maestra.AUTO_PARTE_CODIGO
 WHERE maestra.AUTO_PARTE_CODIGO IS NOT NULL
 AND maestra.COMPRA_PRECIO IS NULL
 -------------------------------------------------------
+--Insertamos todos los codigos y descripcion de cada tipo de auto de la tabla maestra
 INSERT INTO Tipo_Auto
 select tipo_auto_codigo,tipo_auto_desc from GD2C2020.gd_esquema.Maestra
 where TIPO_AUTO_CODIGO is not null
 group by tipo_auto_codigo,tipo_auto_desc;
 -------------------------------------------------------
+/*Insertamos todos los chasis, nro de motor, precio de compra y venta de cada Auto de la tabla maestra.
+Ademas, llenamos su codigo de modelo, fabricante y tipo de auto, comprarando sus nombres con las tablas creadas anteriormente para darnos este codigo.
+*/
 insert into Auto
 select auto_patente,
 auto_nro_chasis,
@@ -427,6 +441,9 @@ and ca.id_transmision = maestra.TIPO_TRANSMISION_CODIGO
 and ca.tipo_motor_codigo = maestra.TIPO_MOTOR_CODIGO
 group by AUTO_PATENTE,AUTO_NRO_CHASIS,AUTO_NRO_motor,AUTO_FECHA_ALTA,AUTO_CANT_KMS,FABRICANTE_NOMBRE,MODELO_CODIGO,TIPO_AUTO_CODIGO,compra_precio,ca.id_config
 -------------------------------------------------------
+--Insertamos todos los codigos, fecha, sucursal, cliente y auto de cada compra de la tabla maestra.
+--El dato id_auto puede ser null ya que esto significa que la compra fue de una autoparte.
+--no necesitamos el id de autoparte, ya que lo tendremos en otra tabla que tendra las distintas autopartes que se hicieron en esa compra
 insert into Compra
 select DISTINCT COMPRA_NRO, COMPRA_FECHA, 
 (Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.CLIENTE_DNI and CLIENTE_NOMBRE = maestra.CLIENTE_NOMBRE)), 
@@ -435,6 +452,9 @@ select DISTINCT COMPRA_NRO, COMPRA_FECHA,
 from GD2C2020.gd_esquema.Maestra maestra
 WHERE COMPRA_NRO IS NOT NULL;
 -------------------------------------------------------
+--Insertamos todos los codigos, fecha, sucursal, cliente y auto de cada venta de la tabla maestra.
+--El dato id_auto puede ser null ya que esto significa que la venta fue de una autoparte.
+--no necesitamos el id de autoparte, ya que lo tendremos en otra tabla que tendra las distintas autopartes que se hicieron en esa venta
 insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL,ID_AUTO)
 select DISTINCT FACTURA_NRO, FACTURA_FECHA, 
 (Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.FAC_CLIENTE_DNI and CLIENTE_NOMBRE = maestra.FAC_CLIENTE_NOMBRE)), 
@@ -443,16 +463,16 @@ select DISTINCT FACTURA_NRO, FACTURA_FECHA,
 from GD2C2020.gd_esquema.Maestra maestra
 WHERE FACTURA_NRO IS NOT NULL;
 -------------------------------------------------------
+--Esta tabla tendra todas las autopartes que se hicieron en cada compra, ademas de la cantidad de autopartes que se compraron.
 INSERT INTO Compra_Autoparte
 SELECT AUTO_PARTE_CODIGO, COMPRA_NRO,SUM(COMPRA_CANT) as CantidadItems
---(SELECT COUNT(AUTO_PARTE_CODIGO) FROM GD2C2020.gd_esquema.Maestra mae where FACTURA_NRO = mae.FACTURA_NRO )
 FROM GD2C2020.gd_esquema.Maestra 
 WHERE (AUTO_PARTE_CODIGO IS NOT NULL AND COMPRA_NRO IS NOT NULL)
 GROUP BY AUTO_PARTE_CODIGO, COMPRA_NRO
 -------------------------------------------------------
+--Esta tabla tendra todas las autopartes que se hicieron en cada venta, ademas de la cantidad de autopartes que se venta.
 INSERT INTO Factura_Autoparte
 SELECT AUTO_PARTE_CODIGO, FACTURA_NRO,SUM(cant_facturada) as CantidadItems
---(SELECT COUNT(AUTO_PARTE_CODIGO) FROM GD2C2020.gd_esquema.Maestra mae where FACTURA_NRO = mae.FACTURA_NRO )
 FROM GD2C2020.gd_esquema.Maestra 
 WHERE (AUTO_PARTE_CODIGO IS NOT NULL AND FACTURA_NRO IS NOT NULL)
 GROUP BY AUTO_PARTE_CODIGO, FACTURA_NRO
