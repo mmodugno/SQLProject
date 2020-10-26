@@ -1,13 +1,21 @@
-USE THE_X_TEAM
-GO
-/*
-Primero, borramos todos los datos(tablas,base,vistas,etc) que ya existan, para evitar inconvenientes a la hora de volver a ejecutar el script completo
-*/
---Base
+use master
+go
+
 If EXISTS (
 	select * from sys.databases
 	where name = 'TP_THE_X_TEAM'
 ) drop database TP_THE_X_TEAM
+
+
+create database TP_THE_X_TEAM
+
+go
+
+USE TP_THE_X_TEAM
+GO
+/*
+Primero, borramos todos los datos(tablas,base,vistas,etc) que ya existan, para evitar inconvenientes a la hora de volver a ejecutar el script completo
+*/
 
 --Tablas
 IF EXISTS (
@@ -140,7 +148,6 @@ GO
 **********************************************/
 
 /* FABRICANTES */
-CREATE DATABASE TP_THE_X_TEAM
 
 CREATE TABLE Fabricante(
 "ID_FABRICANTE" int identity(1,1) PRIMARY KEY,
