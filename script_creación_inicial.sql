@@ -163,6 +163,26 @@ IF EXISTS (
 	DROP VIEW THE_X_TEAM.FacturacionAutopartes
 GO
 
+/* BORRADO DE FUNCIONES */ 
+
+IF EXISTS (
+		SELECT *
+		FROM sys.objects
+		WHERE object_name(object_id) = 'parsear'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP function THE_X_TEAM.parsear
+GO
+
+IF EXISTS (
+		SELECT *
+		FROM sys.objects
+		WHERE object_name(object_id) = 'sinTildes'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP function THE_X_TEAM.sinTildes
+GO
+
 /**********************************************
 ----------   CREACION DE TABLAS    ------------
 **********************************************/
@@ -291,6 +311,36 @@ CREATE TABLE THE_X_TEAM.Factura_Autoparte (
 );
 
 GO
+
+/* functions */
+
+create function THE_X_TEAM.parsear (
+@direccion nvarchar(50))
+returns varchar(100)
+as
+begin
+
+declare @posicionNumero int
+declare @numero nvarchar(5)
+declare @calle nvarchar(50)
+
+set @posicionNumero = PATINDEX('%[0-9.]%', @direccion)
+
+set @calle = STUFF(@direccion,@posicionNumero,LEN(@direccion),'')
+set @numero = STUFF(@direccion,1,@posicionNumero-1,'')
+
+return concat(@calle,' ',@numero)
+
+end
+go
+
+CREATE FUNCTION THE_X_TEAM.sinTildes (@String VARCHAR(100))
+    RETURNS VARCHAR(100)
+AS 
+BEGIN
+    RETURN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@String, 'á', 'a'), 'é','e'), 'í', 'i'), 'ó', 'o'), 'ú','u') 
+END
+go
 
 /**********************************************
 ---------------    VISTAS   -------------------
