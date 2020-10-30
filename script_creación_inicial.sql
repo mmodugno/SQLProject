@@ -1,108 +1,130 @@
-use master
+use GD2C2020
 go
+
+
 
 If EXISTS (
-	select * from sys.databases
-	where name = 'TP_THE_X_TEAM'
-) drop database TP_THE_X_TEAM
+	select * from sys.schemas
+	where name = 'THE_X_TEAM'
+)
+BEGIN
 
-
-create database TP_THE_X_TEAM
-
-go
-
-USE TP_THE_X_TEAM
-GO
 /*
 Primero, borramos todos los datos(tablas,base,vistas,etc) que ya existan, para evitar inconvenientes a la hora de volver a ejecutar el script completo
 */
 
 --Tablas
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Factura_Autoparte'
-		)
-		drop table Factura_Autoparte
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Compra_autoparte'
-		)
-		drop table Compra_autoparte 
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Compra'
-		)
-		drop table Compra
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Factura_Autoparte'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Factura_Autoparte
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Compra_autoparte'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Compra_autoparte 
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Compra'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Compra
 
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Factura'
-		)
-		drop table Factura
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Auto'
-		)
-		drop table Auto
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Tipo_Auto'
-		)
-		drop table Tipo_Auto
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Autoparte'
-		)
-		drop table Autoparte
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Modelo'
-		)
-		drop table Modelo
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Cliente'
-		)
-		drop table Cliente
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Sucursal'
-		)
-		drop table Sucursal
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Config_Auto'
-		)
-		drop table Config_Auto
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Tipo_Transmision'
-		)
-		drop table Tipo_Transmision
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Tipo_Caja'
-		)
-		drop table Tipo_Caja
-IF EXISTS (
-		SELECT * 
-		FROM sys.tables 
-		WHERE object_name(object_id) = 'Fabricante'
-		)
-		drop table Fabricante
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Factura'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Factura
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Auto'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Auto
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Tipo_Auto'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Tipo_Auto
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Autoparte'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Autoparte
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Modelo'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Modelo
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Cliente'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Cliente
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Sucursal'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Sucursal
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Config_Auto'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Config_Auto
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Tipo_Transmision'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Tipo_Transmision
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Tipo_Caja'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Tipo_Caja
+	IF EXISTS (
+			SELECT * 
+			FROM sys.tables 
+			WHERE object_name(object_id) = 'Fabricante'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+			)
+			drop table THE_X_TEAM.Fabricante
+END
+
+ELSE
+
+BEGIN
+
+	EXEC ('create schema THE_X_TEAM;')
+
+	PRINT 'Creado schema THE_X_TEAM'
+END
+
+GO
 
 
 -- BORRADO DE VISTAS
@@ -111,36 +133,36 @@ IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'CompraAutomoviles'
-			--AND schema_name(schema_id) = 'THE_X_TEAM'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-	DROP VIEW CompraAutomoviles
+	DROP VIEW THE_X_TEAM.CompraAutomoviles
 GO
 
 IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'CompraAutopartes'
-			--AND schema_name(schema_id) = 'THE_X_TEAM'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-	DROP VIEW CompraAutopartes
+	DROP VIEW THE_X_TEAM.CompraAutopartes
 GO
 
 IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'FacturacionAutomoviles'
-			--AND schema_name(schema_id) = 'THE_X_TEAM'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-	DROP VIEW FacturacionAutomoviles
+	DROP VIEW THE_X_TEAM.FacturacionAutomoviles
 GO
 
 IF EXISTS (
 		SELECT *
 		FROM sys.VIEWS
 		WHERE object_name(object_id) = 'FacturacionAutopartes'
-			--AND schema_name(schema_id) = 'THE_X_TEAM'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
 		)
-	DROP VIEW FacturacionAutopartes
+	DROP VIEW THE_X_TEAM.FacturacionAutopartes
 GO
 
 /**********************************************
@@ -149,25 +171,28 @@ GO
 
 /* FABRICANTES */
 
-CREATE TABLE Fabricante(
+USE GD2C2020
+GO
+
+CREATE TABLE THE_X_TEAM.Fabricante(
 "ID_FABRICANTE" int identity(1,1) PRIMARY KEY,
 "FABRICANTE_NOMBRE" nvarchar(255)
 );
 
 /* TIPO_CAJA */
-CREATE TABLE Tipo_Caja (
+CREATE TABLE THE_X_TEAM.Tipo_Caja (
 "TIPO_CAJA_CODIGO" decimal(18, 0) PRIMARY KEY,
 "TIPO_CAJA_DESC" nvarchar(255)
 );
 
 /* TIPO_TRANSMISION */
-CREATE TABLE Tipo_Transmision (
+CREATE TABLE THE_X_TEAM.Tipo_Transmision (
 "TIPO_TRANSMISION_CODIGO" decimal(18, 0) PRIMARY KEY,
 "TIPO_TRANSMISION_DESC" nvarchar(255)
 );
 
 /* CONFIG_AUTO */
-CREATE TABLE Config_Auto (
+CREATE TABLE THE_X_TEAM.Config_Auto (
 "ID_CONFIG" int identity(1,1) PRIMARY KEY,
 "ID_CAJA" decimal FOREIGN KEY REFERENCES Tipo_Caja(TIPO_CAJA_CODIGO),
 "ID_TRANSMISION" decimal FOREIGN KEY REFERENCES Tipo_Transmision(TIPO_TRANSMISION_CODIGO),
@@ -175,7 +200,7 @@ CREATE TABLE Config_Auto (
 );
 
 /* SUCURSAL */
-CREATE TABLE Sucursal (
+CREATE TABLE THE_X_TEAM.Sucursal (
 "ID_SUCURSAL" int identity(1,1) PRIMARY KEY,
 "SUCURSAL_DIRECCION" nvarchar(255),
 "SUCURSAL_MAIL" nvarchar(255) ,
@@ -184,7 +209,7 @@ CREATE TABLE Sucursal (
 );
 
 /* CLIENTE */
-CREATE TABLE Cliente (
+CREATE TABLE THE_X_TEAM.Cliente (
 "ID_CLIENTE" int identity(1,1) PRIMARY KEY,
 "CLIENTE_DNI" decimal(18,0) ,
 "CLIENTE_APELLIDO" nvarchar(255),
@@ -195,14 +220,14 @@ CREATE TABLE Cliente (
 );
 
 /* MODELO */
-create table Modelo(
+create table THE_X_TEAM.Modelo(
 "modelo_codigo" decimal(18, 0) primary key,
 "modelo_nombre" nvarchar(255),
 "modelo_potencia" decimal(18, 0)
 );
 
 /* AUTOPARTE */
-CREATE TABLE Autoparte (
+CREATE TABLE THE_X_TEAM.Autoparte (
 "AUTO_PARTE_CODIGO" decimal(18,0) PRIMARY KEY,
 "AUTO_PARTE_DESCRIPCION" nvarchar(255) ,
 "ID_FABRICANTE" int FOREIGN KEY REFERENCES Fabricante(ID_FABRICANTE),
@@ -212,13 +237,13 @@ CREATE TABLE Autoparte (
 );
 
 /* TIPO_AUTO */
-create table Tipo_Auto (
+create table THE_X_TEAM.Tipo_Auto (
 "tipo_auto_codigo" decimal(18,0) primary key,
 "tipo_auto_desc" nvarchar(255)
 );
 
 /* AUTO */
-create table Auto (
+create table THE_X_TEAM.Auto (
 "id_auto" int identity(1,1) primary key,
 "auto_patente" nvarchar(50),
 "auto_nro_chasis" nvarchar(50),
@@ -234,7 +259,7 @@ create table Auto (
 );
 
 /* COMPRA */
-CREATE TABLE Compra (
+CREATE TABLE THE_X_TEAM.Compra (
 "COMPRA_NRO" decimal(18,0) PRIMARY KEY,
 "COMPRA_FECHA" datetime2(3) ,
 "ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
@@ -243,7 +268,7 @@ CREATE TABLE Compra (
 );
 
 /* FACTURA */
-CREATE TABLE Factura (
+CREATE TABLE THE_X_TEAM.Factura (
 "FACTURA_NRO" decimal(18,0) PRIMARY KEY,
 "FACTURA_FECHA" datetime2(3),
 "ID_CLIENTE" int FOREIGN KEY REFERENCES Cliente(ID_CLIENTE),
@@ -252,7 +277,7 @@ CREATE TABLE Factura (
 );
 
 /* COMPRA AUTOPARTE */
-CREATE TABLE Compra_Autoparte (
+CREATE TABLE THE_X_TEAM.Compra_Autoparte (
 "ID_COMP_AUTO_PARTE" int identity(1,1) PRIMARY KEY,
 "AUTO_PARTE_CODIGO" decimal(18,0) FOREIGN KEY REFERENCES Autoparte(AUTO_PARTE_CODIGO),
 "COMPRA_NRO" decimal(18,0) FOREIGN KEY REFERENCES Compra(COMPRA_NRO),
@@ -260,7 +285,7 @@ CREATE TABLE Compra_Autoparte (
 );
 
 /* FACTURA_AUTOPARTE */
-CREATE TABLE Factura_Autoparte (
+CREATE TABLE THE_X_TEAM.Factura_Autoparte (
 "ID_FACT_AUTO_PARTE" int identity(1,1) PRIMARY KEY,
 "AUTO_PARTE_CODIGO" decimal(18,0) FOREIGN KEY REFERENCES Autoparte(AUTO_PARTE_CODIGO),
 "ID_FACTURA" decimal(18,0) FOREIGN KEY REFERENCES Factura(FACTURA_NRO),
@@ -273,7 +298,7 @@ GO
 ---------------    VISTAS   -------------------
 **********************************************/
 --COMPRA DE AUTO
-CREATE VIEW CompraAutomoviles AS
+CREATE VIEW THE_X_TEAM.CompraAutomoviles AS
 SELECT SUCURSAL_DIRECCION as 'Sucursal',
 auto_nro_chasis as 'Nro de chasis',
 auto_nro_motor as 'Nro de motor',
@@ -292,7 +317,7 @@ GO
 
 
 --COMPRA DE AUTOPARTE
-CREATE VIEW CompraAutopartes as
+CREATE VIEW THE_X_TEAM.CompraAutopartes as
 SELECT comp_auto.AUTO_PARTE_CODIGO as 'Codigo de auto parte',
 autoparte.AUTO_PARTE_DESCRIPCION as 'Rubro',
 modelo_nombre as 'Modelo de automovil',
@@ -309,7 +334,7 @@ GO
 
 --FACTURACION DE AUTOMOVIL
 
-CREATE VIEW FacturacionAutomoviles AS
+CREATE VIEW THE_X_TEAM.FacturacionAutomoviles AS
 SELECT 
 auto_nro_chasis as 'Nro de chasis',
 auto_nro_motor as 'Nro de motor',
@@ -328,7 +353,7 @@ INNER JOIN Sucursal sucur ON sucur.ID_SUCURSAL = f.ID_SUCURSAL
 GO
 
 -- FACTURACION DE AUTOPARTES
-CREATE VIEW FacturacionAutopartes as
+CREATE VIEW THE_X_TEAM.FacturacionAutopartes as
 SELECT 
 suc.SUCURSAL_CIUDAD as 'Ciudad Origen',
 suc.SUCURSAL_DIRECCION as 'Sucursal',
@@ -349,33 +374,33 @@ GO
 **********************************************/
 
 -- Insertamos todos los nombres de fabricantes de la tabla maestra, estos luego tendran un ID autogenerado
-INSERT INTO Fabricante
+INSERT INTO THE_X_TEAM.Fabricante
 select DISTINCT FABRICANTE_NOMBRE from GD2C2020.gd_esquema.Maestra;
 -------------------------------------------------------
 -- Insertamos todos los codigos y descripciones de cajas de la tabla maestra
-INSERT INTO Tipo_Caja
+INSERT INTO THE_X_TEAM.Tipo_Caja
 select DISTINCT TIPO_CAJA_CODIGO,TIPO_CAJA_DESC from GD2C2020.gd_esquema.Maestra
 where TIPO_CAJA_CODIGO is not null;
 -------------------------------------------------------
 -- Insertamos todos los codigos y descripciones de transmisiones de la tabla maestra
-INSERT INTO Tipo_Transmision
+INSERT INTO THE_X_TEAM.Tipo_Transmision
 select DISTINCT TIPO_TRANSMISION_CODIGO,TIPO_TRANSMISION_DESC from GD2C2020.gd_esquema.Maestra
 where TIPO_TRANSMISION_CODIGO is not null;
 -------------------------------------------------------
 /*Insertamos todos los codigos de cajas, transmisiones y motores de la tabla maestra, que para algunos autos esta configuracion sera la misma, 
 esto nos dará cada config un ID autogenerado que luego usaremos en los Autos*/
-insert into Config_Auto
+insert into THE_X_TEAM.Config_Auto
 select DISTINCT TIPO_CAJA_CODIGO, TIPO_TRANSMISION_CODIGO,TIPO_MOTOR_CODIGO from GD2C2020.gd_esquema.Maestra
 WHERE TIPO_TRANSMISION_CODIGO IS NOT NULL
 and TIPO_MOTOR_CODIGO is not null;
 -------------------------------------------------------
 --Insertamos todas las direcciones, mail, telefonos y ciudad de cada sucursal de la tabla maestra
-insert into Sucursal
+insert into THE_X_TEAM.Sucursal
 select DISTINCT SUCURSAL_DIRECCION, SUCURSAL_MAIL,SUCURSAL_TELEFONO,SUCURSAL_CIUDAD from GD2C2020.gd_esquema.Maestra
 WHERE SUCURSAL_DIRECCION IS NOT NULL;
 -------------------------------------------------------
 --Insertamos los clientes con su DNI, Apellido, nombre, direccion, fecha de nacimiento y mail. Aunque, estos solo seran los clientes que les compramos autos o autopartes
-INSERT INTO Cliente
+INSERT INTO THE_X_TEAM.Cliente
 select distinct CLIENTE_DNI, CLIENTE_APELLIDO, CLIENTE_NOMBRE, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL 
 from GD2C2020.gd_esquema.Maestra
 where CLIENTE_DNI IS NOT NULL 
@@ -383,7 +408,7 @@ group by CLIENTE_DNI,CLIENTE_APELLIDO,CLIENTE_NOMBRE,CLIENTE_DIRECCION,CLIENTE_F
 
 /*Insertamos los clientes a los que les vendimos autos o autopartes con su DNI, Apellido, nombre, direccion, fecha de nacimiento y mail. 
 Pero, fijandonos que ya no esten insertados, por si algun cliente nos compro y despues le facturamos*/
-INSERT INTO Cliente
+INSERT INTO THE_X_TEAM.Cliente
 select distinct FAC_CLIENTE_DNI, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_NOMBRE, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, FAC_CLIENTE_MAIL 
 from GD2C2020.gd_esquema.Maestra
 where FAC_CLIENTE_DNI IS NOT NULL 
@@ -399,14 +424,14 @@ AND NOT EXISTS (
 group by FAC_CLIENTE_DNI,FAC_CLIENTE_APELLIDO,FAC_CLIENTE_NOMBRE,FAC_CLIENTE_DIRECCION,FAC_CLIENTE_FECHA_NAC,FAC_CLIENTE_MAIL
 -------------------------------------------------------
 --Insertamos todos los codigos, nombre y potencia de cada modelo de la tabla maestra
-insert into Modelo
+insert into THE_X_TEAM.Modelo
 select modelo_codigo,modelo_nombre,modelo_potencia from GD2C2020.gd_esquema.Maestra
 group by modelo_codigo,modelo_nombre,modelo_potencia;
 -------------------------------------------------------
 /*Insertamos todos los codigos, descripciones, precio de compra y venta de cada Autoparte de la tabla maestra.
 Ademas, llenamos su codigo de modelo y fabricante, comprarando sus nombres con las tablas creadas anteriormente para darnos este codigo.
 */
-insert into Autoparte
+insert into THE_X_TEAM.Autoparte
 select DISTINCT maestra.AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION, fab.id_fabricante, MODELO_CODIGO, t.COMPRA_PRECIO, PRECIO_FACTURADO 
 from GD2C2020.gd_esquema.Maestra maestra
 inner join Fabricante fab
@@ -422,7 +447,7 @@ WHERE maestra.AUTO_PARTE_CODIGO IS NOT NULL
 AND maestra.COMPRA_PRECIO IS NULL
 -------------------------------------------------------
 --Insertamos todos los codigos y descripcion de cada tipo de auto de la tabla maestra
-INSERT INTO Tipo_Auto
+INSERT INTO THE_X_TEAM.Tipo_Auto
 select tipo_auto_codigo,tipo_auto_desc from GD2C2020.gd_esquema.Maestra
 where TIPO_AUTO_CODIGO is not null
 group by tipo_auto_codigo,tipo_auto_desc;
@@ -430,7 +455,7 @@ group by tipo_auto_codigo,tipo_auto_desc;
 /*Insertamos todos los chasis, nro de motor, precio de compra y venta de cada Auto de la tabla maestra.
 Ademas, llenamos su codigo de modelo, fabricante y tipo de auto, comprarando sus nombres con las tablas creadas anteriormente para darnos este codigo.
 */
-insert into Auto
+insert into THE_X_TEAM.Auto
 select auto_patente,
 auto_nro_chasis,
 auto_nro_motor,
@@ -451,7 +476,7 @@ group by AUTO_PATENTE,AUTO_NRO_CHASIS,AUTO_NRO_motor,AUTO_FECHA_ALTA,AUTO_CANT_K
 --Insertamos todos los codigos, fecha, sucursal, cliente y auto de cada compra de la tabla maestra.
 --El dato id_auto puede ser null ya que esto significa que la compra fue de una autoparte.
 --no necesitamos el id de autoparte, ya que lo tendremos en otra tabla que tendra las distintas autopartes que se hicieron en esa compra
-insert into Compra
+insert into THE_X_TEAM.Compra
 select DISTINCT COMPRA_NRO, COMPRA_FECHA, 
 (Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.CLIENTE_DNI and CLIENTE_NOMBRE = maestra.CLIENTE_NOMBRE)), 
 (Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.SUCURSAL_DIRECCION),
@@ -462,7 +487,7 @@ WHERE COMPRA_NRO IS NOT NULL;
 --Insertamos todos los codigos, fecha, sucursal, cliente y auto de cada venta de la tabla maestra.
 --El dato id_auto puede ser null ya que esto significa que la venta fue de una autoparte.
 --no necesitamos el id de autoparte, ya que lo tendremos en otra tabla que tendra las distintas autopartes que se hicieron en esa venta
-insert into Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL,ID_AUTO)
+insert into THE_X_TEAM.Factura (FACTURA_NRO,FACTURA_FECHA,ID_CLIENTE,ID_SUCURSAL,ID_AUTO)
 select DISTINCT FACTURA_NRO, FACTURA_FECHA, 
 (Select ID_CLIENTE FROM Cliente WHERE (CLIENTE_DNI= maestra.FAC_CLIENTE_DNI and CLIENTE_NOMBRE = maestra.FAC_CLIENTE_NOMBRE)), 
 (Select ID_SUCURSAL FROM Sucursal WHERE SUCURSAL_DIRECCION=maestra.FAC_SUCURSAL_DIRECCION),
@@ -471,14 +496,14 @@ from GD2C2020.gd_esquema.Maestra maestra
 WHERE FACTURA_NRO IS NOT NULL;
 -------------------------------------------------------
 --Esta tabla tendra todas las autopartes que se hicieron en cada compra, ademas de la cantidad de autopartes que se compraron.
-INSERT INTO Compra_Autoparte
+INSERT INTO THE_X_TEAM.Compra_Autoparte
 SELECT AUTO_PARTE_CODIGO, COMPRA_NRO,SUM(COMPRA_CANT) as CantidadItems
 FROM GD2C2020.gd_esquema.Maestra 
 WHERE (AUTO_PARTE_CODIGO IS NOT NULL AND COMPRA_NRO IS NOT NULL)
 GROUP BY AUTO_PARTE_CODIGO, COMPRA_NRO
 -------------------------------------------------------
 --Esta tabla tendra todas las autopartes que se hicieron en cada venta, ademas de la cantidad de autopartes que se venta.
-INSERT INTO Factura_Autoparte
+INSERT INTO THE_X_TEAM.Factura_Autoparte
 SELECT AUTO_PARTE_CODIGO, FACTURA_NRO,SUM(cant_facturada) as CantidadItems
 FROM GD2C2020.gd_esquema.Maestra 
 WHERE (AUTO_PARTE_CODIGO IS NOT NULL AND FACTURA_NRO IS NOT NULL)
