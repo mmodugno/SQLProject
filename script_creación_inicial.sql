@@ -410,7 +410,7 @@ CANTIDAD_AUTOPARTE as 'Cantidad Requerida',
 autoparte.AUTO_PARTE_DESCRIPCION as 'Rubro',
 (autoparte.PRECIO_FACTURADO * CANTIDAD_AUTOPARTE) as 'Precio Total',
 ID_FACTURA as 'Nro de Factura',
-factura.FACTURA_FECHA as 'Fecha'
+CAST(factura.FACTURA_FECHA as DATE) as 'Fecha'
 FROM THE_X_TEAM.Factura_Autoparte fac_autop
 INNER JOIN THE_X_TEAM.Autoparte autoparte on autoparte.AUTO_PARTE_CODIGO = fac_autop.AUTO_PARTE_CODIGO
 INNER JOIN THE_X_TEAM.Factura factura on fac_autop.ID_FACTURA = factura.FACTURA_NRO
@@ -453,7 +453,7 @@ order by SUCURSAL_MAIL;
 -------------------------------------------------------
 --Insertamos los clientes con su DNI, Apellido, nombre, direccion, fecha de nacimiento y mail. Aunque, estos solo seran los clientes que les compramos autos o autopartes
 INSERT INTO THE_X_TEAM.Cliente
-select distinct CLIENTE_DNI, CLIENTE_APELLIDO, CLIENTE_NOMBRE, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, 
+select distinct CLIENTE_DNI, CLIENTE_APELLIDO, CLIENTE_NOMBRE, THE_X_TEAM.parsear(CLIENTE_DIRECCION) AS  CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, 
 THE_X_TEAM.sinTildes(REPLACE(CLIENTE_MAIL,' ', '')) as CLIENTE_MAIL
 from GD2C2020.gd_esquema.Maestra
 where CLIENTE_DNI IS NOT NULL 
@@ -462,7 +462,7 @@ group by CLIENTE_DNI,CLIENTE_APELLIDO,CLIENTE_NOMBRE,CLIENTE_DIRECCION,CLIENTE_F
 /*Insertamos los clientes a los que les vendimos autos o autopartes con su DNI, Apellido, nombre, direccion, fecha de nacimiento y mail. 
 Pero, fijandonos que ya no esten insertados, por si algun cliente nos compro y despues le facturamos*/
 INSERT INTO THE_X_TEAM.Cliente
-select distinct FAC_CLIENTE_DNI, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_NOMBRE, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, 
+select distinct FAC_CLIENTE_DNI, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_NOMBRE, THE_X_TEAM.parsear(FAC_CLIENTE_DIRECCION) AS FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, 
 THE_X_TEAM.sinTildes(REPLACE(FAC_CLIENTE_MAIL,' ', '')) AS FAC_CLIENTE_MAIL
 from GD2C2020.gd_esquema.Maestra
 where FAC_CLIENTE_DNI IS NOT NULL 
