@@ -90,6 +90,14 @@ IF EXISTS (
 )
 	drop function THE_X_TEAM.stockTotalAutoParte
 
+IF EXISTS (
+	SELECT * 
+	FROM sys.objects 
+	WHERE object_name(object_id) = 'stockTotalAutoParteANUAL'
+	AND schema_name(schema_id) = 'THE_X_TEAM'
+)
+	drop function THE_X_TEAM.stockTotalAutoParteANUAL
+
 
 -----------------/////// FACTURACION de AUTO /////////-----------------
 
@@ -97,6 +105,7 @@ IF EXISTS (
 CREATE TABLE THE_X_TEAM.BI_CLIENTE(
 "ID_CLIENTE" int PRIMARY KEY,
 "CLIENTE_FECHA_NAC" DATE,
+"EDAD" NVARCHAR(50),
 "CLIENTE_SEXO" char(1)
 );
 
@@ -122,7 +131,7 @@ CREATE TABLE THE_X_TEAM.BI_AUTO(
 CREATE TABLE THE_X_TEAM.BI_MODELO(
 "MODELO_CODIGO" decimal(18,0) PRIMARY KEY,
 "MODELO_NOMBRE" NVARCHAR(255),
-"MODELO_POTENCIA" decimal(18,0)
+"MODELO_POTENCIA" NVARCHAR(50)
 );
 
 /* BI_TIEMPO */
@@ -147,16 +156,18 @@ CREATE TABLE THE_X_TEAM.BI_Factura_Autoparte(
 "ID_CLIENTE" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_CLIENTE,
 "ID_SUCURSAL" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_SUCURSAL,
 "ID_AUTO_PARTE" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_AUTOPARTE,
-"FACTURA_FECHA" DATETIME2(3),
+"ID_TIEMPO" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_TIEMPO,
 "PRECIO_FACTURADO" decimal(18,2)
+CONSTRAINT FACTURA_AUTOPARTE_PK PRIMARY KEY (ID_CLIENTE, ID_SUCURSAL, ID_AUTO_PARTE, ID_TIEMPO)
 );
 /* BI_Factura_Auto */
 CREATE TABLE THE_X_TEAM.BI_Factura_Auto(
 "ID_CLIENTE" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_CLIENTE,
 "ID_SUCURSAL" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_SUCURSAL,
 "ID_AUTO" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_AUTO,
-"FACTURA_FECHA" DATETIME2(3),
+"ID_TIEMPO" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_TIEMPO,
 "PRECIO_FACTURADO" decimal(18,2)
+CONSTRAINT FACTURA_AUTO_PK PRIMARY KEY (ID_CLIENTE, ID_SUCURSAL, ID_AUTO, ID_TIEMPO)
 );
 -----------------/////// COMPRA de AUTO /////////-----------------
 /* BI_Compra_Auto */
@@ -164,9 +175,9 @@ CREATE TABLE THE_X_TEAM.BI_Compra_Auto(
 "ID_CLIENTE" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_CLIENTE,
 "ID_SUCURSAL" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_SUCURSAL,
 "ID_AUTO" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_AUTO,
-"COMPRA_FECHA" DATE,
+"ID_TIEMPO" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_TIEMPO,
 "PRECIO_COMPRA" decimal(18,2)
-CONSTRAINT COMPRA_AUTO_PK PRIMARY KEY (ID_CLIENTE, ID_SUCURSAL, ID_AUTO)
+CONSTRAINT COMPRA_AUTO_PK PRIMARY KEY (ID_CLIENTE, ID_SUCURSAL, ID_AUTO, ID_TIEMPO)
 );
 -----------------/////// COMPRA de AUTOPARTES /////////-----------------
 /* BI_Compra_AutoPARTE */
@@ -174,9 +185,9 @@ CREATE TABLE THE_X_TEAM.BI_Compra_Autoparte(
 "ID_CLIENTE" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_CLIENTE,
 "ID_SUCURSAL" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_SUCURSAL,
 "ID_AUTO_PARTE" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_AUTOPARTE,
-"COMPRA_FECHA" DATE,
+"ID_TIEMPO" int FOREIGN KEY REFERENCES THE_X_TEAM.BI_TIEMPO,
 "PRECIO_COMPRA" decimal(18,2)
-CONSTRAINT COMPRA_AUTOPARTE_PK PRIMARY KEY (ID_CLIENTE, ID_SUCURSAL, ID_AUTO_PARTE)
+CONSTRAINT COMPRA_AUTOPARTE_PK PRIMARY KEY (ID_CLIENTE, ID_SUCURSAL, ID_AUTO_PARTE, ID_TIEMPO)
 );
 GO
 
@@ -203,6 +214,35 @@ AS
 	RETURN (@CantidadComprados - @CantidadVendidos)
 	END 
 GO
+/*
+CREATE FUNCTION THE_X_TEAM.stockTotalAutoParteANUAL (@codigoAutoparte decimal(18,0),@anio int,@sucursal int)
+returns int
+AS
+	BEGIN 
+	DECLARE @CantidadVendidos int
+	DECLARE @CantidadComprados int
+
+	SET @CantidadComprados = ISNULL((SELECT SUM(CANTIDAD_AUTOPARTE) from THE_X_TEAM.COMPRA_AUTOPARTE AP 
+									INNER JOIN THE_X_TEAM.Compra c
+								on c.COMPRA_NRO= ap.COMPRA_NRO
+								WHERE AP.AUTO_PARTE_CODIGO = @codigoAutoparte 
+								AND YEAR(c.COMPRA_FECHA) = @anio
+								AND @sucursal = c.ID_SUCURSAL
+								GROUP BY AUTO_PARTE_CODIGO),0)
+	
+
+	SET @CantidadVendidos = isNULL((SELECT SUM(CANTIDAD_AUTOPARTE) from THE_X_TEAM.Factura_Autoparte AP
+									INNER JOIN THE_X_TEAM.Factura f
+								on f.FACTURA_NRO= ap.ID_FACTURA
+								WHERE AP.AUTO_PARTE_CODIGO = @codigoAutoparte 
+								AND YEAR(f.FACTURA_FECHA) = @anio
+								AND @sucursal = f.ID_SUCURSAL
+								GROUP BY AUTO_PARTE_CODIGO),0)
+	
+	RETURN (@CantidadComprados - @CantidadVendidos)
+	END 
+GO*/
+
 
 /**********************************************************************
 ****************************** INSERTS ********************************
@@ -219,7 +259,13 @@ GO
 
 --Cliente--
 INSERT INTO THE_X_TEAM.BI_CLIENTE 
-	SELECT CLI.ID_CLIENTE, CAST(CLI.CLIENTE_FECHA_NAC AS DATE), NULL
+	SELECT CLI.ID_CLIENTE, CAST(CLI.CLIENTE_FECHA_NAC AS DATE),
+	CASE 
+		WHEN DATEDIFF(YEAR,CLI.CLIENTE_FECHA_NAC,GETDATE()) BETWEEN 18 and 30 THEN '18 - 30 Anios'
+		WHEN DATEDIFF(YEAR,CLI.CLIENTE_FECHA_NAC,GETDATE()) BETWEEN 31 and 50 THEN '31 - 50 Anios'
+		ELSE '> 50 anios'
+	END
+	, NULL
 	FROM THE_X_TEAM.Cliente CLI
 GO
 
@@ -231,11 +277,13 @@ GO
 
 --Modelo--
 INSERT INTO THE_X_TEAM.BI_MODELO 
-	SELECT M.MODELO_CODIGO, M.MODELO_NOMBRE, M.MODELO_POTENCIA
+	SELECT M.MODELO_CODIGO, M.MODELO_NOMBRE,CASE 
+		WHEN M.modelo_potencia BETWEEN 50 and 150 THEN '50 - 150cv'
+		WHEN M.modelo_potencia BETWEEN 151 and 300 THEN '151 - 300cv'
+		ELSE '> 300cv'
+	END
 	FROM THE_X_TEAM.Modelo M
 GO
-
-
 
 --Auto--
 INSERT INTO THE_X_TEAM.BI_AUTO 
@@ -261,10 +309,15 @@ GO
 
 --Compra Auto--
 INSERT INTO THE_X_TEAM.BI_COMPRA_AUTO 
-	SELECT ID_CLIENTE, ID_SUCURSAL, C.ID_AUTO, CAST(COMPRA_FECHA AS DATE), A.COMPRA_PRECIO
+	SELECT  ID_CLIENTE, ID_SUCURSAL, C.ID_AUTO, 
+			(SELECT T.CODIGO_TIEMPO FROM THE_X_TEAM.BI_TIEMPO T
+				WHERE YEAR(C.COMPRA_FECHA)=T.CODIGO_ANIO 
+					AND MONTH(C.COMPRA_FECHA)=T.CODIGO_MES) as ID_TIEMPO,
+			A.COMPRA_PRECIO
 	FROM THE_X_TEAM.COMPRA C
 		INNER JOIN THE_X_TEAM.AUTO A	
 			on A.ID_AUTO = C.ID_AUTO
+			--ORDER
 GO
 
 --Autoparte--
@@ -275,9 +328,16 @@ INSERT INTO THE_X_TEAM.BI_AUTOPARTE
 			on FAB.ID_FABRICANTE = AP.ID_FABRICANTE
 GO
 
+--SELECT * FROM THE_X_TEAM.BI_AUTOPARTE
+
+
 --Compra Autoparte--
 INSERT INTO THE_X_TEAM.BI_Compra_Autoparte
-	SELECT ID_CLIENTE, ID_SUCURSAL, AP.AUTO_PARTE_CODIGO, CAST(COMPRA_FECHA AS DATE), AP.COMPRA_PRECIO
+	SELECT  ID_CLIENTE, ID_SUCURSAL, AP.AUTO_PARTE_CODIGO, 
+			(SELECT T.CODIGO_TIEMPO FROM THE_X_TEAM.BI_TIEMPO T
+				WHERE YEAR(C.COMPRA_FECHA)=T.CODIGO_ANIO 
+					AND MONTH(C.COMPRA_FECHA)=T.CODIGO_MES) as ID_TIEMPO,
+			AP.COMPRA_PRECIO
 	FROM THE_X_TEAM.COMPRA C
 		INNER JOIN THE_X_TEAM.Compra_Autoparte CA	
 			on C.COMPRA_NRO = CA.COMPRA_NRO
@@ -287,7 +347,11 @@ GO
 
 --Facturacion Auto--
 INSERT INTO THE_X_TEAM.BI_Factura_Auto
-	SELECT ID_CLIENTE, ID_SUCURSAL, F.ID_AUTO, CAST(FACTURA_FECHA AS DATE), A.PRECIO_FACTURADO
+	SELECT  ID_CLIENTE, ID_SUCURSAL, F.ID_AUTO,
+			(SELECT T.CODIGO_TIEMPO FROM THE_X_TEAM.BI_TIEMPO T
+				WHERE YEAR(F.FACTURA_FECHA)=T.CODIGO_ANIO 
+					AND MONTH(F.FACTURA_FECHA)=T.CODIGO_MES) as ID_TIEMPO, 
+			A.PRECIO_FACTURADO
 	FROM THE_X_TEAM.Factura F
 		INNER JOIN THE_X_TEAM.AUTO A	
 			on A.ID_AUTO = F.ID_AUTO
@@ -296,7 +360,11 @@ GO
 
 --Facturacion Autoparte--
 INSERT INTO THE_X_TEAM.BI_Factura_Autoparte
-	SELECT ID_CLIENTE, ID_SUCURSAL, AP.AUTO_PARTE_CODIGO, CAST(FACTURA_FECHA AS DATE), AP.PRECIO_FACTURADO
+	SELECT ID_CLIENTE, ID_SUCURSAL, AP.AUTO_PARTE_CODIGO,
+		   (SELECT T.CODIGO_TIEMPO FROM THE_X_TEAM.BI_TIEMPO T
+				WHERE YEAR(F.FACTURA_FECHA)=T.CODIGO_ANIO 
+					AND MONTH(F.FACTURA_FECHA)=T.CODIGO_MES) as ID_TIEMPO, 
+		   AP.PRECIO_FACTURADO
 	FROM THE_X_TEAM.Factura F
 		INNER JOIN THE_X_TEAM.Factura_Autoparte A	
 			on A.ID_FACTURA = F.FACTURA_NRO
@@ -305,16 +373,76 @@ INSERT INTO THE_X_TEAM.BI_Factura_Autoparte
 GO
 
 /* Automóviles:
-o Cantidad de automóviles, vendidos y comprados x sucursal y mes
+o ----Cantidad de automóviles, vendidos y comprados x sucursal y mes
 o ----Precio promedio de automóviles, vendidos y comprados.
-o Ganancias (precio de venta – precio de compra) x Sucursal x mes
+o ----Ganancias (precio de venta – precio de compra) x Sucursal x mes
 o ----Promedio de tiempo en stock de cada modelo de automóvil.
 o
  Autopartes
-o Precio promedio de cada autoparte, vendida y comprada.
-o Ganancias (precio de venta – precio de compra) x Sucursal x mes
-o Promedio de tiempo en stock de cada autoparte.
+o ----Precio promedio de cada autoparte, vendida y comprada.
+o ----Ganancias (precio de venta – precio de compra) x Sucursal x mes
+o ----Promedio de tiempo en stock de cada autoparte.
 o Máxima cantidad de stock por cada sucursal (anual)  */
+
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'Precio_Promedio'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.Precio_Promedio
+GO
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'Promedio_Tiempo_stock_Modelos'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.Promedio_Tiempo_stock_Modelos
+GO
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'CANT_AUTO_TRANSACCION'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.CANT_AUTO_TRANSACCION
+GO
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'GANANCIAS_AUTO'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.GANANCIAS_AUTO
+GO
+
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'Precio_Promedio_Autopartes'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.Precio_Promedio_Autopartes
+GO
+
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'GANANCIAS_AUTOPARTE'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.GANANCIAS_AUTOPARTE
+GO
+
+IF EXISTS (
+		SELECT *
+		FROM sys.VIEWS
+		WHERE object_name(object_id) = 'MAXIMO_STOCK_ANUAL'
+			AND schema_name(schema_id) = 'THE_X_TEAM'
+		)
+	DROP VIEW THE_X_TEAM.MAXIMO_STOCK_ANUAL
+GO
 
 CREATE VIEW THE_X_TEAM.Precio_Promedio 
 	AS
@@ -334,10 +462,103 @@ CREATE VIEW THE_X_TEAM.Promedio_Tiempo_stock_Modelos
 GO
 
 --Cantidad de automóviles, vendidos y comprados x sucursal y mes
-
 CREATE VIEW THE_X_TEAM.CANT_AUTO_TRANSACCION
 	AS
-	SELECT * 
+		SELECT  COUNT(*) as 'Cantidad de Autos',
+				CA.ID_SUCURSAL as 'Sucursal',
+				(SELECT CODIGO_ANIO FROM THE_X_TEAM.BI_TIEMPO
+					WHERE CODIGO_TIEMPO = CA.ID_TIEMPO) as 'Anio' ,
+				(SELECT DATENAME(MONTH, DATEADD(month,CODIGO_MES , 0 ) - 1 ) FROM THE_X_TEAM.BI_TIEMPO
+					WHERE CODIGO_TIEMPO = CA.ID_TIEMPO) as 'Mes' ,
+					'Compra' as 'Operación'
+			FROM THE_X_TEAM.BI_Compra_Auto CA
+		group by CA.ID_SUCURSAL, CA.ID_TIEMPO
+			UNION
+		SELECT  COUNT(*) as 'Cantidad de Autos',
+				FA.ID_SUCURSAL as 'Sucursal',
+				(SELECT CODIGO_ANIO FROM THE_X_TEAM.BI_TIEMPO
+					WHERE CODIGO_TIEMPO = FA.ID_TIEMPO) as 'Anio' ,
+				(SELECT DATENAME(MONTH, DATEADD(month,CODIGO_MES , 0 ) - 1 ) FROM THE_X_TEAM.BI_TIEMPO
+					WHERE CODIGO_TIEMPO = FA.ID_TIEMPO) as 'Mes', 
+					'Venta' as 'Operación'
+			FROM THE_X_TEAM.BI_Factura_Auto FA
+		group by FA.ID_SUCURSAL, FA.ID_TIEMPO
+		--ORDER BY 2,3
 go
 
---FALTA CAMBIAR LAS TABLAS DE COMPRA Y VENTA (CON EL TIEMPO)
+--Ganancias (precio de venta – precio de compra) x Sucursal x mes
+CREATE VIEW THE_X_TEAM.GANANCIAS_AUTO
+	AS
+		SELECT DATENAME(MONTH, DATEADD(month,T.CODIGO_MES , 0 ) - 1 ) as 'Mes',
+			T.CODIGO_ANIO as 'Anio',
+			SUM(FA.PRECIO_FACTURADO - CA.PRECIO_COMPRA) as 'Ganancia'
+		FROM THE_X_TEAM.BI_TIEMPO T
+			INNER JOIN THE_X_TEAM.BI_Compra_Auto CA 
+		on t.CODIGO_TIEMPO = ca.ID_TIEMPO
+			INNER JOIN THE_X_TEAM.BI_Factura_Auto FA
+		on CA.ID_AUTO = FA.ID_AUTO
+		group by T.CODIGO_MES,CODIGO_ANIO
+go
+
+CREATE VIEW THE_X_TEAM.Precio_Promedio_Autopartes
+	AS
+	SELECT 'Compra' as Operacion, AVG(CA.PRECIO_COMPRA) as Promedio , AP.ID_AUTOPARTE as 'ID de Autoparte'
+	FROM THE_X_TEAM.BI_Compra_Autoparte CA 
+		INNER JOIN THE_X_TEAM.BI_AUTOPARTE AP 
+	on CA.ID_AUTO_PARTE = AP.ID_AUTOPARTE
+	GROUP BY AP.ID_AUTOPARTE
+	
+			UNION
+	SELECT 'Venta' , AVG(FA.PRECIO_FACTURADO) as Promedio , AP.ID_AUTOPARTE as 'ID de Autoparte'
+	FROM THE_X_TEAM.BI_Factura_Autoparte FA
+	INNER JOIN THE_X_TEAM.BI_AUTOPARTE AP 
+	on FA.ID_AUTO_PARTE = AP.ID_AUTOPARTE
+	GROUP BY AP.ID_AUTOPARTE
+	--ORDER BY AP.ID_AUTOPARTE
+GO
+
+CREATE VIEW THE_X_TEAM.GANANCIAS_AUTOPARTE
+	AS
+		SELECT DATENAME(MONTH, DATEADD(month,T.CODIGO_MES , 0 ) - 1 ) as 'Mes',
+			T.CODIGO_ANIO as 'Anio',
+			SUM(FA.PRECIO_FACTURADO - CA.PRECIO_COMPRA) as 'Ganancia'
+		FROM THE_X_TEAM.BI_TIEMPO T
+			INNER JOIN THE_X_TEAM.BI_Compra_Autoparte CA 
+		on t.CODIGO_TIEMPO = ca.ID_TIEMPO
+			INNER JOIN THE_X_TEAM.BI_Factura_Autoparte FA
+		on CA.ID_AUTO_PARTE = FA.ID_AUTO_PARTE
+		group by T.CODIGO_MES,CODIGO_ANIO
+go
+
+--Máxima cantidad de stock por cada sucursal (anual)
+CREATE VIEW THE_X_TEAM.MAXIMO_STOCK_ANUAL
+	AS
+		SELECT SUM(a) as 'Cantidad Maxima de Stock',ANIO,SUCURSAL_DIRECCION as 'Sucursal Direccion' FROM (
+
+SELECT 
+ISNULL((SELECT SUM(CANTIDAD_AUTOPARTE) from THE_X_TEAM.COMPRA_AUTOPARTE AP 
+									INNER JOIN THE_X_TEAM.Compra c
+								on c.COMPRA_NRO= ap.COMPRA_NRO
+								WHERE AP.AUTO_PARTE_CODIGO = ID_AUTO_PARTE 
+								AND YEAR(c.COMPRA_FECHA) = T.CODIGO_ANIO
+								AND S.ID_SUCURSAL = c.ID_SUCURSAL
+								GROUP BY AUTO_PARTE_CODIGO),0)
+								-
+		isNULL((SELECT SUM(CANTIDAD_AUTOPARTE) from THE_X_TEAM.Factura_Autoparte AP
+									INNER JOIN THE_X_TEAM.Factura f
+								on f.FACTURA_NRO= ap.ID_FACTURA
+								WHERE AP.AUTO_PARTE_CODIGO = ID_AUTO_PARTE
+								AND YEAR(f.FACTURA_FECHA) = T.CODIGO_ANIO
+								AND S.ID_SUCURSAL = f.ID_SUCURSAL
+								GROUP BY AP.AUTO_PARTE_CODIGO),0) as a,
+		T.CODIGO_ANIO as 'Anio',
+		S.SUCURSAL_DIRECCION,
+		S.ID_SUCURSAL
+	FROM THE_X_TEAM.BI_TIEMPO T
+		INNER JOIN THE_X_TEAM.BI_Compra_Autoparte CA 
+	on t.CODIGO_TIEMPO = ca.ID_TIEMPO
+		INNER JOIN THE_X_TEAM.BI_SUCURSAL S
+	on S.ID_SUCURSAL = CA.ID_SUCURSAL
+	group by T.CODIGO_TIEMPO,S.ID_SUCURSAL,ca.ID_AUTO_PARTE,T.CODIGO_ANIO,S.SUCURSAL_DIRECCION ) as a
+	group by ANIO,SUCURSAL_DIRECCION
+GO
